@@ -1,0 +1,73 @@
+sourceSets {
+    generated {
+        java {
+            srcDirs = ['src/main/generated']
+        }
+    }
+}
+
+dependencies {
+    def querydslVersion = '3.2.4'
+    def slf4jVersion = "1.7.2"
+
+    def queryDSL = '3.2.4'
+    compile project(':common')
+    compile group: 'mysql', name: 'mysql-connector-java', version:'5.1.22'
+    compile group: 'com.jolbox', name: 'bonecp', version:'0.7.1.RELEASE'
+    compile group: 'com.google.guava', name: 'guava', version:'14.0'
+    compile group: 'org.springframework', name: 'spring-core', version:'3.2.3.RELEASE'
+    compile group: 'org.springframework', name: 'spring-orm', version:'3.2.3.RELEASE'
+    compile group: 'org.springframework', name: 'spring-tx', version:'3.2.3.RELEASE'
+    compile group: 'org.springframework', name: 'spring-context', version:'3.2.3.RELEASE'
+    compile group: 'org.springframework', name: 'spring-context-support', version:'3.2.3.RELEASE'
+    compile group: 'org.hibernate', name: 'hibernate-core', version:'4.1.10.Final'
+    compile group: 'org.hibernate.javax.persistence', name: 'hibernate-jpa-2.0-api', version:'1.0.1. Final'
+    compile group: 'org.hibernate', name: 'hibernate-entitymanager', version:'4.1.10.Final'
+    compile group: 'org.hibernate', name: 'hibernate-validator', version:'4.3.1.Final'
+
+    compile group: 'org.springframework.data', name: 'spring-data-jpa', version:'1.4.2.RELEASE'
+
+    compile group: 'com.mysema.querydsl', name: 'querydsl-core', version:"$queryDSL"
+    compile group: 'com.mysema.querydsl', name: 'querydsl-jpa', version:"$queryDSL"
+    compile group: 'com.mysema.querydsl', name: 'querydsl-sql', version:"$queryDSL"
+
+    compile "com.mysema.querydsl:querydsl-apt:$queryDSL"
+    provided 'org.projectlombok:lombok:0.12.0'
+
+    compile "org.slf4j:jcl-over-slf4j:$slf4jVersion"
+    compile "org.slf4j:jul-to-slf4j:$slf4jVersion"
+
+    provided "com.mysema.querydsl:querydsl-apt:$querydslVersion"
+    provided 'org.projectlombok:lombok:0.12.0'
+}
+
+task generateQueryDSL(type: JavaCompile, group: 'build', description: 'Generates the QueryDSL query types') {
+    source = sourceSets.main.java
+    classpath = configurations.compile + configurations.provided
+    options.compilerArgs = [
+            "-proc:only",
+            "-processor", "com.mysema.query.apt.jpa.JPAAnnotationProcessor"
+    ]
+    destinationDir = sourceSets.generated.java.srcDirs.iterator().next()
+}
+
+compileJava {
+    dependsOn generateQueryDSL
+    source generateQueryDSL.destinationDir
+}
+
+compileGeneratedJava {
+    dependsOn generateQueryDSL
+    options.warnings = false
+    classpath += sourceSets.main.runtimeClasspath
+}
+
+clean {
+    delete sourceSets.generated.java.srcDirs
+}
+
+idea {
+    module {
+        sourceDirs += file('src/main/generated')
+    }
+}
