@@ -8,9 +8,11 @@ version = '1.0.0'
 
 buildscript {
     repositories {
+        mavenCentral()
         jcenter()
         maven { url = 'http://dl.bintray.com/khoulaiz/gradle-plugins' }
         maven { url 'http://repo.springsource.org/plugins-release' }
+        maven { url 'http://192.168.13.209:8080/nexus/content/repositories/thirdparty' }
     }
     dependencies {
         classpath (group: 'com.sahlbach.gradle', name: 'gradle-jetty-eclipse-plugin', version: '1.9.+')
@@ -51,6 +53,10 @@ subprojects {
         sonarProperties {
             property "sonar.sourceEncoding", "UTF-8"
         }
+    }
+    
+    jacoco {
+        toolVersion = '0.6.3.201306030806'
     }
 
     test {
