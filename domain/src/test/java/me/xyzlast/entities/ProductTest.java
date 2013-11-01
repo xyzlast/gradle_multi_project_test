@@ -26,8 +26,8 @@ public class ProductTest {
 
     @Test
     public void setId() {
-        assertThat(product.getId(), is(0));
-        product.setId(10);
-        assertThat(product.getId(), is(10));
+        assertThat(product.getId(), is(nullValue()));
+        product.setId(10L);
+        assertThat(product.getId(), is(10L));
     }
 }
