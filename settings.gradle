@@ -16,7 +16,7 @@ include 'api'
 include 'services:webservice'
 */
 
-rootProject.name = '08'
+rootProject.name = 'gradle-test-project'
 include 'common'
 include 'domain'
 include 'publicWeb'

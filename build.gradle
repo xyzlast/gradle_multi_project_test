@@ -1,38 +1,24 @@
 apply plugin: 'base'
 apply plugin: 'sonar-runner'
 apply plugin: 'maven'
-
-import com.sahlbach.gradle.plugins.jettyEclipse.*
-
 version = '1.0.0'
+
+ext {
+    javaVersion = 1.7
+    springVersion = '4.0.0.RELEASE'
+}
+
 
 buildscript {
     repositories {
         mavenCentral()
         jcenter()
-        maven { url = 'http://dl.bintray.com/khoulaiz/gradle-plugins' }
         maven { url 'http://repo.springsource.org/plugins-release' }
-        maven { url 'http://192.168.13.209:8080/nexus/content/repositories/thirdparty' }
     }
     dependencies {
-        classpath (group: 'com.sahlbach.gradle', name: 'gradle-jetty-eclipse-plugin', version: '1.9.+')
         classpath 'org.gradle.api.plugins:gradle-tomcat-plugin:1.0'
         classpath (group: 'org.gradle.api.plugins', name: 'gradle-cargo-plugin', version: '0.6.1')
         classpath 'org.springframework.build.gradle:propdeps-plugin:0.0.1'
-    }
-}
-
-ext {
-    javaVersion = 1.7
-}
-
-sonarRunner {
-    sonarProperties {
-        property "sonar.host.url", "http://192.168.13.209:9000"
-        property "sonar.jdbc.url", "jdbc:mysql://192.168.13.209:3306/sonar"
-        property "sonar.jdbc.driverClassName", "com.mysql.jdbc.Driver"
-        property "sonar.jdbc.username", "root"
-        property "sonar.jdbc.password", 'qwer12#$'
     }
 }
 
@@ -41,115 +27,26 @@ allprojects {
     apply plugin: 'propdeps-maven'
     apply plugin: 'propdeps-idea'
     apply plugin: 'propdeps-eclipse'
-}
-
-subprojects {
-    apply plugin: 'java'
-    apply plugin: 'eclipse-wtp'
-    apply plugin: 'idea'
-    apply plugin: 'jacoco'
-
-    sonarRunner {
-        sonarProperties {
-            property "sonar.sourceEncoding", "UTF-8"
-        }
-    }
-    
-    jacoco {
-        toolVersion = '0.6.3.201306030806'
-    }
-
-    test {
-        jacoco {
-            append = false
-            destinationFile = file("target/jacoco.exec")
-            classDumpFile = file("target/classpathdumps")
-        }
-    }
-
-    if(project.hasProperty('target')) {
-        sourceSets {
-            main.resources.srcDirs = ['src/main/resources', "src/main/resources-${project.target}"]
-        }
-    } else {
-        String hostname = InetAddress.getLocalHost().getHostName();
-        if(hostname.endsWith('.local')) {   //맥의 경우, .local 이 모든 hostname에 추가됩니다.
-            hostname.replace(".local", '')
-        }
-
-        sourceSets {
-            main.resources.srcDirs = ['src/main/resources', "src/main/resources-" + hostname]
-        }
-    }
 
     repositories {
         mavenLocal()
         mavenCentral()
+        jcenter()
+        maven { url 'http://download.java.net/maven/2' }
+        maven { url "http://oss.sonatype.org/content/repositories/snapshots/" }
+        maven { url 'https://maven.java.net/content/repositories/releases'}
+        maven { url 'http://repo.springsource.org/plugins-release' }
     }
 
     dependencies {
-        compile 'org.slf4j:slf4j-api:1.7.5'
         provided 'org.projectlombok:lombok:0.12.0'
-        testCompile "junit:junit:4.11"
-    }
-    
-    sourceCompatibility = rootProject.ext.javaVersion
-    targetCompatibility = rootProject.ext.javaVersion
-
-    tasks.withType(Compile) {
-        options.encoding = 'UTF-8'
     }
 }
 
-configure(subprojects.findAll { it.name.endsWith('Web') }) {
-    apply plugin: 'war'
-    apply plugin: 'jettyEclipse'
-    apply plugin: 'tomcat'
-    apply plugin: 'cargo'
 
-    String configPath = project.rootProject.projectDir.absolutePath.toString() + "/config/jetty/webdefault.xml"
-
-    dependencies {
-        String tomcatVersion = '7.0.11'
-        tomcat "org.apache.tomcat.embed:tomcat-embed-core:${tomcatVersion}"
-        tomcat "org.apache.tomcat.embed:tomcat-embed-logging-juli:${tomcatVersion}"
-        tomcat("org.apache.tomcat.embed:tomcat-embed-jasper:${tomcatVersion}") {
-            exclude group: 'org.eclipse.jdt.core.compiler', module: 'ecj'
-        }
-
-        def cargoVersion = '1.3.3'
-        cargo "org.codehaus.cargo:cargo-core-uberjar:$cargoVersion",
-                "org.codehaus.cargo:cargo-ant:$cargoVersion"
-    }
-
-    jettyEclipse {
-        automaticReload = true
-        webDefaultXml = file(configPath)
-    }
-
-    cargoRedeployRemote {
-        dependsOn war
-    }
-
-    cargoDeployRemote {
-        dependsOn war
-    }
-
-    cargo {
-        containerId = 'tomcat7x'
-        port = 8080
-
-        deployable {
-            context = "${project.name}"
-        }
-
-        remote {
-            hostname = '192.168.13.209'
-            username = 'ykyoon'
-            password = 'qwer12#$'
-        }
-    }
-}
+apply from: 'base.gradle'
+apply from: 'domain.gradle'
+apply from: 'web.gradle'
 
 
 

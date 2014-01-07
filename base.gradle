@@ -1,0 +1,73 @@
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'eclipse'
+    apply plugin: 'eclipse-wtp'
+    apply plugin: 'idea'
+    apply plugin: 'jacoco'
+    apply plugin: 'groovy'
+
+    sonarRunner {
+        sonarProperties {
+            property "sonar.sourceEncoding", "UTF-8"
+        }
+    }
+
+    jacoco {
+        toolVersion = '0.6.3.201306030806'
+    }
+
+    test {
+        jacoco {
+            append = false
+            destinationFile = file("target/jacoco.exec")
+            classDumpFile = file("target/classpathdumps")
+        }
+    }
+
+    if(project.hasProperty('target')) {
+        sourceSets {
+            main.resources.srcDirs = ['src/main/resources', "src/main/resources-${project.target}"]
+        }
+    } else {
+        String hostname = InetAddress.getLocalHost().getHostName();
+        if(hostname.endsWith('.local')) {   //맥의 경우, .local 이 모든 hostname에 추가됩니다.
+            hostname = hostname.replace(".local", '')
+        }
+
+        sourceSets {
+            main.resources.srcDirs = ['src/main/resources', "src/main/resources-" + hostname]
+        }
+    }
+
+    dependencies {
+        def slf4jVersion = "1.7.2"
+        compile "org.slf4j:jcl-over-slf4j:$slf4jVersion"
+        compile "org.slf4j:jul-to-slf4j:$slf4jVersion"
+        compile "org.slf4j:slf4j-api:$slf4jVersion"
+        compile 'ch.qos.logback:logback-classic:1.0.13'
+
+        testCompile "junit:junit:4.11"
+
+        groovy "org.codehaus.groovy:groovy-all:2.1.5"
+        testCompile "org.spockframework:spock-core:1.0-groovy-2.0-SNAPSHOT"
+        testCompile "org.spockframework:spock-spring:1.0-groovy-2.0-SNAPSHOT"
+    }
+
+    sourceCompatibility = rootProject.ext.javaVersion
+    targetCompatibility = rootProject.ext.javaVersion
+
+    tasks.withType(Compile) {
+        options.encoding = 'UTF-8'
+    }
+}
+
+sonarRunner {
+    sonarProperties {
+        property "sonar.host.url", "http://192.168.13.209:9000"
+        property "sonar.jdbc.url", "jdbc:mysql://192.168.13.209:3306/sonar"
+        property "sonar.jdbc.driverClassName", "com.mysql.jdbc.Driver"
+        property "sonar.jdbc.username", "root"
+        property "sonar.jdbc.password", 'qwer12#$'
+    }
+}
+
