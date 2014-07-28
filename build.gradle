@@ -1,54 +1,121 @@
 apply plugin: 'base'
 apply plugin: 'sonar-runner'
-apply plugin: 'maven'
-version = '1.0.0'
+
+project.group = 'me.xyzlast.test'
+project.version = '1.0.0'
 
 ext {
-    javaVersion = 1.7
-    springVersion = '4.0.0.RELEASE'
+    javaVersion = 1.8
+    springVersion = "4.0.6.RELEASE"
+    webContainer = 'tomcat8'
 }
 
 
 buildscript {
     repositories {
+        mavenLocal()
         mavenCentral()
         jcenter()
         maven { url 'http://repo.springsource.org/plugins-release' }
     }
     dependencies {
-        classpath 'org.gradle.api.plugins:gradle-tomcat-plugin:1.0'
-        classpath (group: 'org.gradle.api.plugins', name: 'gradle-cargo-plugin', version: '0.6.1')
-        classpath 'org.springframework.build.gradle:propdeps-plugin:0.0.1'
+        classpath 'org.springframework.build.gradle:propdeps-plugin:0.0.7'
+        classpath 'org.gradle.api.plugins:gradle-cargo-plugin:1.4'
     }
 }
 
-allprojects {
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'eclipse'
+    apply plugin: 'eclipse-wtp'
+    apply plugin: 'jacoco'
+    apply plugin: 'idea'
+    apply plugin: 'groovy'
     apply plugin: 'propdeps'
     apply plugin: 'propdeps-maven'
     apply plugin: 'propdeps-idea'
     apply plugin: 'propdeps-eclipse'
 
+    jacoco {
+        toolVersion = '0.7.1-SNAPSHOT'
+        reportsDir = file("${rootProject.buildDir}/reports/codecoverage")
+    }
+
+    jacocoTestReport {
+        reports {
+            xml.destination "${project.buildDir}/reports/codecoverage/result.xml"
+            xml.enabled true
+            csv.enabled false
+            html.destination "${project.buildDir}/reports/codecoverage/html"
+        }
+    }
+
+    test {
+        jacoco {
+            destinationFile = file("${project.buildDir}/jacoco/jacoco.exec")
+            classDumpFile = file("${project.buildDir}/jacoco/classpathdumps")
+            excludes = ['**/entities/**/*']
+            append = true
+        }
+    }
+
+    if(project.hasProperty('target')) {
+        sourceSets {
+            main.resources.srcDirs = ['src/main/resources', "src/main/resources-${project.target}"]
+        }
+    } else {
+        String hostname = InetAddress.getLocalHost().getHostName();
+        if(hostname.endsWith('.local')) {   //맥의 경우, .local 이 모든 hostname에 추가됩니다.
+            hostname = hostname.replace(".local", '')
+        }
+        sourceSets {
+            main.resources.srcDirs = ['src/main/resources', "src/main/resources-" + hostname]
+        }
+    }
+
     repositories {
         mavenLocal()
         mavenCentral()
         jcenter()
-        maven { url 'http://download.java.net/maven/2' }
+        maven { url 'http://repo.spring.io/snapshot' }
+        maven { url 'https://github.com/spring-projects/spring-framework' }
         maven { url "http://oss.sonatype.org/content/repositories/snapshots/" }
-        maven { url 'https://maven.java.net/content/repositories/releases'}
-        maven { url 'http://repo.springsource.org/plugins-release' }
+        maven { url 'http://repo.spring.io/milestone' }
+        maven { url 'http://download.java.net/maven/2' }
+        maven { url 'https://maven.java.net/content/repositories/releases' }
     }
 
     dependencies {
-        provided 'org.projectlombok:lombok:0.12.0'
+        compile 'org.slf4j:slf4j-api:1.7.6'
+        compile 'org.slf4j:jcl-over-slf4j:1.7.6'
+        compile 'ch.qos.logback:logback-classic:1.0.13'
+        compile 'ch.qos.logback:logback-core:1.0.13'
+
+        testCompile "junit:junit:4.11"
+        testCompile 'org.mockito:mockito-core:1.9.5'
+        testCompile 'org.hamcrest:hamcrest-all:1.3'
+        testCompile "org.springframework:spring-test:${rootProject.ext.springVersion}"
+
+        testCompile "org.spockframework:spock-core:1.0-groovy-2.0-SNAPSHOT"
+        testCompile "org.spockframework:spock-spring:1.0-groovy-2.0-SNAPSHOT"
+    }
+
+    sourceCompatibility = rootProject.ext.javaVersion
+    targetCompatibility = rootProject.ext.javaVersion
+}
+
+sonarRunner {
+    sonarProperties {
+        property "sonar.host.url", "http://192.168.13.209:9000"
+        property "sonar.jdbc.url", "jdbc:mysql://192.168.13.209:3306/sonar"
+        property "sonar.jdbc.driverClassName", "com.mysql.jdbc.Driver"
+        property "sonar.jdbc.username", "root"
+        property "sonar.jdbc.password", 'qwer12#$'
     }
 }
 
-
-apply from: 'base.gradle'
-apply from: 'domain.gradle'
-apply from: 'web.gradle'
-
-
-
-
+task help << {
+    println 'gradle :privateWeb:appRun    >> jetty9을 이용한 web server 구동'
+    println 'gradle :privateWeb:tomcatRun >> tomcat8을 이용한 web server 구동'
+}
 
