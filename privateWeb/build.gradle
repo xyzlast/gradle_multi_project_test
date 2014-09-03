@@ -1,11 +1,19 @@
 apply plugin: 'war'
-apply from: 'https://raw.github.com/akhikhl/gretty/master/pluginScripts/gretty.plugin'
+apply plugin: 'org.akhikhl.gretty'
 apply plugin: 'cargo'
 
+buildscript {
+    repositories {
+        mavenCentral()
+        jcenter()
+    }
+    dependencies {
+        classpath 'org.gradle.api.plugins:gradle-cargo-plugin:1.5'
+        classpath 'org.akhikhl.gretty:gretty:1.1.1'
+    }
+}
+
 dependencies {
-    def cargoVersion = '1.3.3'
-    cargo "org.codehaus.cargo:cargo-core-uberjar:$cargoVersion",
-            "org.codehaus.cargo:cargo-ant:$cargoVersion"
     providedCompile 'javax.servlet:javax.servlet-api:3.1.0'
     providedCompile 'javax.websocket:javax.websocket-api:1.0'
     providedCompile 'javax.servlet:jsp-api:2.0'
@@ -21,7 +29,7 @@ cargoDeployRemote {
 }
 
 cargo {
-    containerId = 'tomcat7x'
+    containerId = 'tomcat8x'
     port = 8080
 
     deployable {
@@ -33,4 +41,16 @@ cargo {
         username = 'ykyoon'
         password = 'qwer12#$'
     }
+}
+
+gretty {
+    servletContainer = 'tomcat8'
+    contextPath = "private-web"
+    managedClassReload = false
+    recompileOnSourceChange = false
+    reloadOnClassChange = false
+    reloadOnConfigChange = false
+    reloadOnLibChange = false
+    host = 'localhost'
+    httpPort = 8080
 }
